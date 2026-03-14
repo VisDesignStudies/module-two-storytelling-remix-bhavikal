@@ -1,6 +1,6 @@
 # Does Money Buy Wins in the NBA?
 
-**Live Site:** [your-github-username.github.io/your-repo-name](#) ← update this link after deploying
+**Live Site:** [bhavikal.github.io/module-two-storytelling-remix](https://visdesignstudies.github.io/module-two-storytelling-remix-bhavikal/)
 
 **Original Story:** ["The Payroll and Competitive Balance Myth"](https://www.espn.com/blog/truehoop/post/_/id/32841/the-payroll-and-competitive-balance-myth) — Tom Haberstroh, ESPN TrueHoop
 
@@ -62,8 +62,6 @@ Claude Sonnet 4 was used to assist with:
 - Converting the payroll spreadsheet from wide to long CSV format (Python script)
 - HTML/CSS debugging
 
-All data collection, design decisions, visualization choices, and final edits are the author's own. The story argument and framing were developed independently.
-
 ## Original Authors Credit
 
 Original story: **"The Payroll and Competitive Balance Myth"** by Tom Haberstroh from ESPN TrueHoop.
@@ -75,8 +73,8 @@ My remix updates and argues against parts of the original piece using data from 
 I deployed my story as a live webpage via GitHub Pages.
 **Live link:** https://visdesignstudies.github.io/module-two-storytelling-remix-bhavikal/
 
-### Counter-argument / Multiple Views (3pts)
+### Multiple Views (3pts)
 My remix argues against Haberstroh's original piece. My conclusion
 section directly addresses the original article's claim of competitive balance and uses
-two visualizations — the scatter plot (payroll vs. wins, 2014–2025) and the champions
-bar chart (payroll rank of each title winner) — to refute it with modern data. I explain both charts and how they contradict the original argument.
+two visualizations: the scatter plot (payroll vs. wins, 2014–2025) and the champions
+bar chart (payroll rank of each title winner): to refute it with modern data. I explain both charts and how they contradict the original argument.
