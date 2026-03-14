@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Does Money Buy Wins in the NBA?</title>
+  <script src="https://d3js.org/d3.v6.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red: #c1121f;
+      --dark: #1a1a2e;
+      --mid: #2d2d44;
+      --light-bg: #f8f5f0;
+      --text: #1c1c1c;
+      --muted: #6b6b6b;
+      --border: #e0d8cc;
+      --playoff: #c1121f;
+      --noplayoff: #a8b4c0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Source Serif 4', Georgia, serif;
+      background: var(--light-bg);
+      color: var(--text);
+      line-height: 1.8;
+    }
+
+    /* hero */
+    .hero {
+      background: var(--dark);
+      color: white;
+      padding: 80px 40px 60px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 40px,
+        rgba(193,18,31,0.04) 40px,
+        rgba(193,18,31,0.04) 80px
+      );
+    }
+    .hero-label {
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 900;
+      line-height: 1.1;
+      max-width: 800px;
+      margin: 0 auto 24px;
+      position: relative;
+    }
+    .hero h1 span { color: var(--red); }
+    .hero-sub {
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.65);
+      max-width: 560px;
+      margin: 0 auto 32px;
+      position: relative;
+    }
+    .byline {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.45);
+      position: relative;
+    }
+    .byline a { color: rgba(255,255,255,0.6); }
+
+    /* main content */
+    .content {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .section { margin: 60px 0; }
+
+    .section-label {
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.9rem;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 18px;
+      color: var(--dark);
+    }
+
+    p {
+      font-size: 1.05rem;
+      color: #2c2c2c;
+      margin-bottom: 16px;
+      font-weight: 300;
+    }
+
+    .pullquote {
+      border-left: 4px solid var(--red);
+      padding: 16px 24px;
+      margin: 28px 0;
+      background: white;
+      border-radius: 0 6px 6px 0;
+      font-size: 1.15rem;
+      font-style: italic;
+      color: var(--dark);
+      font-weight: 400;
+    }
+
+    /* chart containers */
+    .chart-wrap {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 28px 24px 20px;
+      margin: 32px 0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+    .chart-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+    .chart-subtitle {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .chart-caption {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 12px;
+      font-style: italic;
+    }
+
+    /* legend */
+    .legend {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* tooltip */
+    .tooltip {
+      position: absolute;
+      visibility: hidden;
+      background: var(--dark);
+      color: white;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      pointer-events: none;
+      z-index: 100;
+      line-height: 1.6;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      max-width: 200px;
+    }
+    .tooltip strong { color: var(--red); display: block; margin-bottom: 2px; }
+
+    /* line chart hover label*/
+    .team-label {
+      font-size: 9px;
+      fill: var(--muted);
+    }
+
+    /* year filter*/
+    .year-filter {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      justify-content: center;
+    }
+    .year-btn {
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: 'Source Serif 4', serif;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+    .year-btn:hover, .year-btn.active {
+      background: var(--red);
+      border-color: var(--red);
+      color: white;
+    }
+
+    /* svg axes */
+    .axis path, .axis line { stroke: var(--border); }
+    .axis text { fill: var(--muted); font-size: 11px; font-family: 'Source Serif 4', serif; }
+    .axis-label { fill: var(--muted); font-size: 11px; font-family: 'Source Serif 4', serif; }
+
+    /* footer */
+    footer {
+      background: var(--dark);
+      color: rgba(255,255,255,0.5);
+      padding: 40px 24px;
+      margin-top: 80px;
+      font-size: 0.82rem;
+      line-height: 1.9;
+    }
+    footer .content { max-width: 780px; }
+    footer a { color: rgba(255,255,255,0.65); }
+    footer strong { color: rgba(255,255,255,0.8); }
+    footer hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0; }
+
+    /* divider */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 48px 0;
+    }
+
+    /* stat callouts */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 28px 0;
+    }
+    .stat-box {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 16px;
+      text-align: center;
+    }
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--red);
+      line-height: 1;
+    }
+    .stat-desc {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 600px) {
+      .stat-row { grid-template-columns: 1fr; }
+      .hero { padding: 50px 20px 40px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- hero -->
+<div class="hero">
+  <div class="hero-label">NBA Data Story &nbsp;·&nbsp; 2014–2025</div>
+  <h1>Does <span>Money</span> Buy Wins in the NBA?</h1>
+  <p class="hero-sub">A decade of payroll data reveals an interesting relationship between spending and success.</p>
+  <p class="byline">
+    By Bhavika Lingutla &nbsp;·&nbsp; March 13, 2026 &nbsp;·&nbsp;
+    A remix of <a href="https://www.espn.com/blog/truehoop/post/_/id/32841/the-payroll-and-competitive-balance-myth" target="_blank">"The Payroll and Competitive Balance Myth"</a> by Tom Haberstroh, ESPN TrueHoop
+  </p>
+</div>
+
+<!-- intro -->
+<div class="content">
+  <div class="section">
+    <p>In 2011, Tom Haberstroh of ESPN's TrueHoop made a bold claim that payroll doesn't really matter as much as everyone thinks. Over a decade of NBA basketball, big-market and small-market teams had roughly evenly split championships. Tom's argument claimed that the league was more balanced than others believed.</p>
+    <p>However, that was in was 2011. Since then, the NBA has changed dramatically. The salary cap has exploded, and the luxury tax has become an admission price for contenders. Superteams have formed and collapsed. A new generation of front offices has reshaped how teams are built, and how much they cost.</p>
+    <p>Twelve years of data later, this claim deserves to be looked into again.</p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- section 1 -->
+  <div class="section">
+    <div class="section-label">Section 01</div>
+    <h2>The Champion's Wallet</h2>
+    <p>Starting with the biggest question: do NBA champions tend to be big spenders? The chart below shows the payroll rank of each champion from 2014 to 2025, where rank 1 means the highest-spending team in the league that year.</p>
+    <p>The picture is mixed, but shows an important trend. Champions are mostly clustered near the top of the spending ladder. The most notable exceptions, San Antonio Spurs in 2014 and OKC Thunder in 2025, are outliers.</p>
+
+    <div class="chart-wrap">
+      <div class="chart-title">NBA Champions by Payroll Rank</div>
+      <div class="chart-subtitle">1 = highest-spending team in the league that year. Lower bars = higher spender.</div>
+      <canvas id="championsChart" height="280"></canvas>
+      <p class="chart-caption">Source: <a href="https://www.spotrac.com/nba/cap/_/year/2013" target="_blank">Spotrac NBA Cap Tracker</a>. Payroll rank among all 30 teams each season.</p>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-num">8/12</div>
+        <div class="stat-desc">Champions ranked in the top 10 in payroll</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">3.1×</div>
+        <div class="stat-desc">Average payroll gap between highest and lowest spenders (2025)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">26th</div>
+        <div class="stat-desc">OKC's payroll rank when they won in 2025: the biggest outlier</div>
+      </div>
+    </div>
+
+    <div class="pullquote">"The 2025 OKC Thunder are the most recent exception. A team built through years of tanking, not big spending. However, for every OKC, there are five Golden State Warriors."</div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- section 2 -->
+  <div class="section">
+    <div class="section-label">Section 02</div>
+    <h2>Payroll vs. Wins</h2>
+    <p>The scatter plot below plots every team-season from 2014 to 2025 on the same canvas. Each dot is one team in one year. Teams colored <strong style="color:var(--red)">red</strong> made the playoffs; <strong style="color:var(--noplayoff)">gray</strong> dots did not.</p>
+    <p>Use the year buttons to filter by season, or hover over any dot to see the team name, payroll, and win total. There seems to be a messy pattern but there's a significant upward trend. Higher spending correlates with more wins.</p>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Payroll vs. Wins, All Team-Seasons</div>
+      <div class="chart-subtitle">Hover over dots to explore. Filter by year using the buttons below.</div>
+      <div class="year-filter" id="yearFilter"></div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:var(--playoff)"></span>Made Playoffs</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--noplayoff)"></span>Missed Playoffs</span>
+      </div>
+      <div id="scatterplot"></div>
+      <p class="chart-caption">Each point = one team-season (2014–2025). Source: <a href="https://www.basketball-reference.com/leagues/" target="_blank">Spotrac, Basketball Reference</a>.</p>
+    </div>
+
+    <p>The correlation isn't perfect, but the trend is noticeable: teams below $80M rarely make the playoffs, while teams spending $160M+ are almost always in playoff contention. The bar has risen over the decade.</p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- section 3 -->
+  <div class="section">
+    <div class="section-label">Section 03</div>
+    <h2>The Rich Get Richer</h2>
+    <p>I don't think the most intriguing story is that money correlates with wins. It's how much the gap between spenders and non-spenders has grown. The line chart below tracks every team's payroll from 2014 to 2025.</p>
+    <p>Hover over any line to highlight that team's trajectory. Note how the top lines have moved away from the bottom over the past decade. The NBA's financial outlook has changed, along with the competitive balance.</p>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Team Payrolls Over Time (2014–2025)</div>
+      <div class="chart-subtitle">Hover over a line to highlight one team. All 30 NBA teams shown.</div>
+      <div id="linechart"></div>
+      <p class="chart-caption">Source: <a href="https://www.spotrac.com/nba/cap/_/year/2013" target="_blank">Spotrac NBA Cap Tracker</a>.</p>
+    </div>
+
+    <p>In 2014, the gap between the highest and lowest spenders was around $50M. By 2025, that gap had increased to $100M. The salary cap has risen, but not all teams have risen with it.</p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- conclusion -->
+  <div class="section">
+    <div class="section-label">Conclusion</div>
+    <h2>So, Does Money Buy Wins?</h2>
+    <p><p>Haberstroh was right, in 2011. The data from that era showed true competitive balance, and that argument held up. But as of 2025, the NBA looks different. Payroll correlates with wins more than it did a decade ago, champions are more likely to be top spenders, and the financial gap between the league's lowest and highest spenders has grown.</p>
+<p>The scatter plot above tells a different story than Haberstroh's original data: across 360 team-seasons from 2014–2025, higher payroll consistently trended toward more wins. The champions bar chart emphasizes this. While the author pointed to balanced championship distribution, my data shows that low-spending winners like the 2014 Spurs (22nd in payroll) and 2025 Thunder (26th in payroll) are becoming increasingly rare exceptions, and not evidence of true parity.</p>
+<p>But, this doesn't mean money guarantees a win. Ask the 2023-24 Golden State Warriors, for example, who spent the most in the league and won just 46 games. But it does mean that underspending has become increasingly difficult to overcome. The OKC Thunder's 2025 championship is a wonderful story, but also an anomaly.</p>
+<p>The original argument made a strong case for parity. However, the twelve years of data since then show that window may be closing.</p>
+  </div>
+</div>
+
+<!-- shared tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- footer -->
+<footer>
+  <div class="content">
+    <strong>Data Sources</strong><br>
+    Payroll data: <a href="https://www.spotrac.com/nba/cap/_/year/2013" target="_blank">Spotrac NBA Cap Tracker</a><br>
+    Win totals & standings: <a href="https://www.basketball-reference.com/leagues/" target="_blank">Basketball Reference</a><br>
+    Championship history: <a href="https://www.basketball-reference.com/leagues/" target="_blank">Basketball Reference League Index</a>
+    <hr>
+    <strong>Original Story</strong><br>
+    This page remixes <a href="https://www.espn.com/blog/truehoop/post/_/id/32841/the-payroll-and-competitive-balance-myth" target="_blank">"The Payroll and Competitive Balance Myth"</a> by Tom Haberstroh, ESPN TrueHoop. Original authors credited.
+    <hr>
+    <strong>AI Usage</strong><br>
+    Claude Sonnet 4 was used to assist with data formatting and HTML/CSS debugging.
+  </div>
+</footer>
+
+<script>
+
+// visualization 1: bar chart — champions by payroll rank (chart.js)
+const champData = {
+  labels: ['2014\nSpurs','2015\nGSW','2016\nCLE','2017\nGSW','2018\nGSW','2019\nTOR','2020\nLAL','2021\nMIL','2022\nGSW','2023\nDEN','2024\nBOS','2025\nOKC'],
+  ranks: [22, 6, 2, 7, 2, 3, 22, 17, 1, 7, 6, 26]
+};
+
+const barColors = champData.ranks.map(r =>
+  r <= 5 ? 'rgba(193,18,31,0.85)' :
+  r <= 10 ? 'rgba(193,18,31,0.5)' :
+  'rgba(168,180,192,0.7)'
+);
+
+new Chart(document.getElementById('championsChart'), {
+  type: 'bar',
+  data: {
+    labels: champData.labels,
+    datasets: [{
+      label: 'Payroll Rank',
+      data: champData.ranks,
+      backgroundColor: barColors,
+      borderColor: barColors.map(c => c.replace(/[\d.]+\)$/, '1)')),
+      borderWidth: 1,
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => `Payroll rank: #${ctx.raw} out of 30 teams`
+        }
+      }
+    },
+    scales: {
+      y: {
+        min: 0,
+        max: 30,
+        title: { display: true, text: 'Payroll Rank (1 = highest spender)', color: '#6b6b6b', font: { size: 11 } },
+        ticks: { color: '#6b6b6b', font: { size: 10 } },
+        grid: { color: '#f0ebe3' }
+      },
+      x: {
+  ticks: { 
+    color: '#6b6b6b', 
+    font: { size: 9 },
+    maxRotation: 45,
+    minRotation: 45,
+    autoSkip: false
+  },
+  grid: { display: false }
+}
+    }
+  }
+});
+
+// loading csv data for d3 charts
+d3.csv("data/payroll_wins.csv", function(d) {
+  return {
+    team: d.team,
+    team_name: d.team_name,
+    year: +d.year,
+    payroll: +d.payroll,
+    payrollM: +d.payroll / 1e6,
+    wins: +d.wins,
+    playoffs: +d.playoffs
+  };
+}).then(function(data) {
+
+  buildScatter(data);
+  buildLineChart(data);
+
+});
+
+// visualization 2: scatter plot — payroll vs wins (d3)
+function buildScatter(allData) {
+  const container = document.getElementById("scatterplot");
+  const margin = { top: 20, right: 30, bottom: 50, left: 60 };
+  const totalW = container.clientWidth || 720;
+  const width = totalW - margin.left - margin.right;
+  const height = 380 - margin.top - margin.bottom;
+
+  const svg = d3.select("#scatterplot")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const tooltip = d3.select("#tooltip");
+
+  // scales
+  const x = d3.scaleLinear()
+    .domain([40, d3.max(allData, d => d.payrollM) + 10])
+    .range([0, width]);
+
+  const y = d3.scaleLinear()
+    .domain([0, 82])
+    .range([height, 0]);
+
+  // axes
+  svg.append("g")
+    .attr("class", "axis")
+    .attr("transform", `translate(0,${height})`)
+    .call(d3.axisBottom(x).ticks(7).tickFormat(d => `$${d}M`));
+
+  svg.append("g")
+    .attr("class", "axis")
+    .call(d3.axisLeft(y).ticks(8));
+
+  // axes labels
+  svg.append("text")
+    .attr("class", "axis-label")
+    .attr("x", width / 2)
+    .attr("y", height + 42)
+    .attr("text-anchor", "middle")
+    .text("Team Payroll (Millions USD)");
+
+  svg.append("text")
+    .attr("class", "axis-label")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -height / 2)
+    .attr("y", -44)
+    .attr("text-anchor", "middle")
+    .text("Regular Season Wins");
+
+  // trend line group
+  const trendG = svg.append("g").attr("class", "trend-group");
+
+  // dots group
+  const dotsG = svg.append("g").attr("class", "dots-group");
+
+  let currentYear = "all";
+
+  function drawTrendLine(filtered) {
+    trendG.selectAll("line.trend").remove();
+    const n = filtered.length;
+    if (n < 2) return;
+    const xMean = d3.mean(filtered, d => d.payrollM);
+    const yMean = d3.mean(filtered, d => d.wins);
+    let num = 0, den = 0;
+    filtered.forEach(d => {
+      num += (d.payrollM - xMean) * (d.wins - yMean);
+      den += (d.payrollM - xMean) ** 2;
+    });
+    const slope = num / den;
+    const intercept = yMean - slope * xMean;
+    const x1 = d3.min(filtered, d => d.payrollM);
+    const x2 = d3.max(filtered, d => d.payrollM);
+    trendG.append("line")
+      .attr("class", "trend")
+      .attr("x1", x(x1)).attr("y1", y(slope * x1 + intercept))
+      .attr("x2", x(x2)).attr("y2", y(slope * x2 + intercept))
+      .attr("stroke", "rgba(193,18,31,0.3)")
+      .attr("stroke-width", 2)
+      .attr("stroke-dasharray", "6,4");
+  }
+
+  function updateDots(year) {
+    const filtered = year === "all" ? allData : allData.filter(d => d.year === year);
+
+    drawTrendLine(filtered);
+
+    const dots = dotsG.selectAll("circle.dot").data(filtered, d => d.team + d.year);
+
+    dots.enter()
+      .append("circle")
+      .attr("class", "dot")
+      .attr("r", 5)
+      .attr("cx", d => x(d.payrollM))
+      .attr("cy", d => y(d.wins))
+      .attr("fill", d => d.playoffs ? "var(--playoff)" : "var(--noplayoff)")
+      .attr("opacity", 0.72)
+      .attr("stroke", "white")
+      .attr("stroke-width", 0.8)
+      .on("mouseover", function(event, d) {
+        d3.select(this).attr("r", 8).attr("opacity", 1).attr("stroke-width", 1.5);
+        tooltip
+          .style("visibility", "visible")
+          .html(`<strong>${d.team_name}</strong>${d.year}<br>$${d.payrollM.toFixed(1)}M payroll<br>${d.wins} wins<br>${d.playoffs ? "✓ Playoffs" : "✗ Missed Playoffs"}`);
+      })
+      .on("mousemove", function(event) {
+        tooltip
+          .style("top", (event.pageY - 80) + "px")
+          .style("left", (event.pageX + 12) + "px");
+      })
+      .on("mouseout", function() {
+        d3.select(this).attr("r", 5).attr("opacity", 0.72).attr("stroke-width", 0.8);
+        tooltip.style("visibility", "hidden");
+      });
+
+    dots.transition().duration(300)
+      .attr("cx", d => x(d.payrollM))
+      .attr("cy", d => y(d.wins))
+      .attr("fill", d => d.playoffs ? "var(--playoff)" : "var(--noplayoff)");
+
+    dots.exit().remove();
+  }
+
+  // building year filter buttons
+  const years = ["all", ...Array.from(new Set(allData.map(d => d.year))).sort()];
+  const filterDiv = document.getElementById("yearFilter");
+  years.forEach(yr => {
+    const btn = document.createElement("button");
+    btn.className = "year-btn" + (yr === "all" ? " active" : "");
+    btn.textContent = yr === "all" ? "All Years" : yr;
+    btn.addEventListener("click", function() {
+      document.querySelectorAll(".year-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentYear = yr === "all" ? "all" : +yr;
+      updateDots(currentYear);
+    });
+    filterDiv.appendChild(btn);
+  });
+
+  updateDots("all");
+}
+
+// visualization 3: line chart — payroll over time (d3)
+function buildLineChart(allData) {
+  const container = document.getElementById("linechart");
+  const margin = { top: 20, right: 100, bottom: 50, left: 70 };
+  const totalW = container.clientWidth || 720;
+  const width = totalW - margin.left - margin.right;
+  const height = 400 - margin.top - margin.bottom;
+
+  const svg = d3.select("#linechart")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const tooltip = d3.select("#tooltip");
+
+  // grouping data by team
+  const groupedData = d3.group(allData, d => d.team);
+
+  // sorting each team's data by year
+  groupedData.forEach((values, key) => {
+    values.sort((a, b) => a.year - b.year);
+  });
+
+  // scales
+  const x = d3.scaleLinear()
+    .domain([2014, 2025])
+    .range([0, width]);
+
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(allData, d => d.payrollM) + 10])
+    .range([height, 0]);
+
+  // axes
+  svg.append("g")
+    .attr("class", "axis")
+    .attr("transform", `translate(0,${height})`)
+    .call(d3.axisBottom(x).tickFormat(d3.format("d")).ticks(11));
+
+  svg.append("g")
+    .attr("class", "axis")
+    .call(d3.axisLeft(y).ticks(7).tickFormat(d => `$${d}M`));
+
+  // axes labels
+  svg.append("text")
+    .attr("class", "axis-label")
+    .attr("x", width / 2)
+    .attr("y", height + 42)
+    .attr("text-anchor", "middle")
+    .text("Season");
+
+  svg.append("text")
+    .attr("class", "axis-label")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -height / 2)
+    .attr("y", -54)
+    .attr("text-anchor", "middle")
+    .text("Team Payroll (Millions USD)");
+
+  // line generator
+  const valueline = d3.line()
+    .x(d => x(d.year))
+    .y(d => y(d.payrollM));
+
+  // color scale — ordinal using team abbrevs
+  const color = d3.scaleOrdinal()
+    .domain(Array.from(groupedData.keys()))
+    .range(d3.schemeTableau10.concat(d3.schemePastel1).concat(d3.schemeSet3));
+
+  // drawing all lines
+  const lines = svg.selectAll(".team-line")
+    .data(Array.from(groupedData.entries()))
+    .join("path")
+    .attr("class", "team-line")
+    .attr("d", d => valueline(d[1]))
+    .attr("fill", "none")
+    .attr("stroke", d => color(d[0]))
+    .attr("stroke-width", 1.8)
+    .attr("opacity", 0.55);
+
+  svg.selectAll(".team-line-hit")
+    .data(Array.from(groupedData.entries()))
+    .join("path")
+    .attr("class", "team-line-hit")
+    .attr("d", d => valueline(d[1]))
+    .attr("fill", "none")
+    .attr("stroke", "transparent")
+    .attr("stroke-width", 12)
+    .on("mouseover", function(event, d) {
+      // fading all lines
+      lines.attr("opacity", 0.1).attr("stroke-width", 1.2);
+      // highlighting specific line
+      svg.selectAll(".team-line")
+        .filter(ld => ld[0] === d[0])
+        .attr("opacity", 1)
+        .attr("stroke-width", 3.5);
+
+      const lastPoint = d[1][d[1].length - 1];
+      tooltip
+        .style("visibility", "visible")
+        .html(`<strong>${d[1][0].team_name}</strong>2014: $${d[1][0].payrollM.toFixed(1)}M<br>2025: $${lastPoint.payrollM.toFixed(1)}M<br>Growth: +$${(lastPoint.payrollM - d[1][0].payrollM).toFixed(1)}M`);
+    })
+    .on("mousemove", function(event) {
+      tooltip
+        .style("top", (event.pageY - 80) + "px")
+        .style("left", (event.pageX + 12) + "px");
+    })
+    .on("mouseout", function() {
+      lines.attr("opacity", 0.55).attr("stroke-width", 1.8);
+      tooltip.style("visibility", "hidden");
+    });
+}
+</script>
+</body>
+</html>
